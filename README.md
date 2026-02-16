@@ -321,3 +321,159 @@ python src/evaluate.py
 - **Não altere os datasets de avaliação** - apenas os prompts em `prompts/bug_to_user_story_v2.yml`
 - **Itere, itere, itere** - é normal precisar de 3-5 iterações para atingir 0.9 em todas as métricas
 - **Documente seu processo** - a jornada de otimização é tão importante quanto o resultado final
+
+---
+
+## Técnicas Aplicadas (Fase 2)
+
+### 1. Role Prompting
+
+**O que é:** Definir uma persona clara para o modelo, direcionando o tom e a perspectiva da resposta.
+
+**Por que escolhi:** A métrica Tone Score avalia profissionalismo, empatia e foco em valor de negócio. Sem persona, o LLM gera texto genérico. Com a persona de Product Manager sênior, o modelo adota vocabulário de metodologias ágeis e foca no usuário.
+
+**Como apliquei:**
+
+```
+Você é um Product Manager sênior especialista em metodologias ágeis,
+com domínio em transformar relatos técnicos de bugs em User Stories
+claras, completas e orientadas a valor de negócio.
+```
+
+### 2. Few-shot Learning
+
+**O que é:** Fornecer exemplos concretos de entrada/saída para o modelo aprender o padrão esperado por demonstração.
+
+**Por que escolhi:** As métricas User Story Format Score e Acceptance Criteria Score exigem formato específico (Given-When-Then, "Como um... eu quero... para que..."). Exemplos concretos ensinam o padrão melhor que regras abstratas.
+
+**Como apliquei:** 3 exemplos cobrindo cada nível de complexidade do dataset:
+- **Bug simples** (validação de email) — User Story + critérios básicos
+- **Bug médio** (performance de relatório) — User Story + critérios + Contexto Técnico
+- **Bug complexo** (checkout com múltiplas falhas) — Estrutura completa com seções separadas (USER STORY PRINCIPAL, CRITÉRIOS DE ACEITAÇÃO, CRITÉRIOS TÉCNICOS, CONTEXTO DO BUG, TASKS TÉCNICAS)
+
+### 3. Chain of Thought (CoT)
+
+**O que é:** Instruir o modelo a raciocinar passo a passo antes de gerar a resposta final.
+
+**Por que escolhi:** A métrica Completeness Score avalia se todos os aspectos do bug foram cobertos. O passo a passo força o modelo a não pular informações, especialmente em bugs complexos com múltiplos problemas.
+
+**Como apliquei:** Processo de análise em 6 passos:
+
+```
+1. Identificar a persona afetada
+2. Extrair o problema central
+3. Definir o valor de negócio
+4. Classificar a complexidade (simples/médio/complexo)
+5. Mapear critérios de aceitação
+6. Identificar edge cases
+```
+
+---
+
+## Resultados Finais
+
+### Tabela comparativa: v1 vs v2
+
+| Métrica | Prompt v1 (ruim) | Prompt v2 (otimizado) |
+|---------|:-----------------:|:---------------------:|
+| Tone Score | <!-- preencher após evaluate --> | <!-- preencher após evaluate --> |
+| Acceptance Criteria Score | <!-- preencher após evaluate --> | <!-- preencher após evaluate --> |
+| User Story Format Score | <!-- preencher após evaluate --> | <!-- preencher após evaluate --> |
+| Completeness Score | <!-- preencher após evaluate --> | <!-- preencher após evaluate --> |
+| **Média** | <!-- preencher --> | <!-- preencher --> |
+
+> **TODO:** Preencher após executar `python src/evaluate.py` com os resultados reais.
+> Adicionar screenshots do dashboard LangSmith e link público.
+
+### Evidências no LangSmith
+
+- Link público do dashboard: <!-- adicionar link -->
+- Screenshots das avaliações: <!-- adicionar screenshots -->
+
+### Histórico de Iterações
+
+| Iteração | Mudança | Impacto |
+|----------|---------|---------|
+| 1 | Prompt v2 inicial com Role Prompting + Few-shot + CoT | <!-- preencher --> |
+| 2 | <!-- ajuste --> | <!-- preencher --> |
+| 3 | <!-- ajuste --> | <!-- preencher --> |
+
+---
+
+## Como Executar
+
+### Pré-requisitos
+
+- Python 3.9+
+- Conta no [LangSmith](https://smith.langchain.com/) com API key
+- API key de um LLM provider (OpenAI ou Google Gemini)
+
+### 1. Clonar e configurar
+
+```bash
+git clone https://github.com/SEU_USUARIO/mba-ia-pull-evaluation-prompt.git
+cd mba-ia-pull-evaluation-prompt
+python3 -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+### 2. Configurar variáveis de ambiente
+
+```bash
+cp .env.example .env
+# Editar .env com suas credenciais:
+# - LANGSMITH_API_KEY
+# - USERNAME_LANGSMITH_HUB
+# - OPENAI_API_KEY ou GOOGLE_API_KEY
+# - LLM_PROVIDER (openai ou google)
+```
+
+| Variável | Descrição | Default |
+|----------|-----------|---------|
+| `LANGSMITH_API_KEY` | Chave de acesso ao LangSmith | — |
+| `USERNAME_LANGSMITH_HUB` | Seu handle no LangSmith Hub | — |
+| `LLM_PROVIDER` | Provider do LLM (`google` ou `openai`) | `openai` |
+| `LLM_MODEL` | Modelo para gerar respostas | `gpt-4o-mini` |
+| `EVAL_MODEL` | Modelo para avaliar métricas | `gpt-4o` |
+| `EVAL_MAX_EXAMPLES` | Quantidade de exemplos avaliados por execução (ver detalhes abaixo) | `10` |
+| `EVAL_RATE_LIMIT_DELAY` | Delay em segundos entre cada chamada ao LLM para respeitar o RPM (requests por minuto) do provider. Use `0` para desabilitar. | `0` |
+
+**Sobre `EVAL_MAX_EXAMPLES`:** Cada exemplo do dataset gera **4 chamadas** ao LLM:
+
+1. Gerar a resposta do prompt (invoke do chain)
+2. Avaliar métrica F1-Score (chamada ao LLM avaliador)
+3. Avaliar métrica Clarity (chamada ao LLM avaliador)
+4. Avaliar métrica Precision (chamada ao LLM avaliador)
+
+No free tier do Gemini, o limite diário (RPD) pode ser baixo (ex: 20 req/dia). Para calcular o valor ideal:
+
+```
+EVAL_MAX_EXAMPLES = RPD ÷ 4
+```
+
+Exemplo: com 20 RPD → `EVAL_MAX_EXAMPLES=5` (5 × 4 = 20 requests).
+
+### 3. Pull do prompt original
+
+```bash
+python src/pull_prompts.py
+```
+
+### 4. Push do prompt otimizado
+
+```bash
+python src/push_prompts.py
+```
+
+### 5. Avaliar
+
+```bash
+python src/evaluate.py
+```
+
+### 6. Rodar testes
+
+```bash
+pytest tests/test_prompts.py -v
+```

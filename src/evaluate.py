@@ -20,6 +20,7 @@ Configure o provider no arquivo .env através da variável LLM_PROVIDER.
 import os
 import sys
 import json
+import time
 from typing import List, Dict, Any
 from pathlib import Path
 from dotenv import load_dotenv
@@ -178,6 +179,12 @@ def evaluate_prompt_on_example(
         }
 
 
+def _wait_rate_limit(delay: int):
+    """Aguarda entre chamadas à API para respeitar o limite de RPM do provider."""
+    if delay:
+        time.sleep(delay)
+
+
 def evaluate_prompt(
     prompt_name: str,
     dataset_name: str,
@@ -199,19 +206,32 @@ def evaluate_prompt(
 
         print("   Avaliando exemplos...")
 
-        for i, example in enumerate(examples[:10], 1):
+        max_examples = int(os.getenv("EVAL_MAX_EXAMPLES", "10"))
+        rate_limit_delay = int(os.getenv("EVAL_RATE_LIMIT_DELAY", "0"))
+
+        for i, example in enumerate(examples[:max_examples], 1):
             result = evaluate_prompt_on_example(prompt_template, example, llm)
+            _wait_rate_limit(rate_limit_delay)
 
             if result["answer"]:
                 f1 = evaluate_f1_score(result["question"], result["answer"], result["reference"])
+                _wait_rate_limit(rate_limit_delay)
                 clarity = evaluate_clarity(result["question"], result["answer"], result["reference"])
+                _wait_rate_limit(rate_limit_delay)
                 precision = evaluate_precision(result["question"], result["answer"], result["reference"])
+                _wait_rate_limit(rate_limit_delay)
 
                 f1_scores.append(f1["score"])
                 clarity_scores.append(clarity["score"])
                 precision_scores.append(precision["score"])
 
-                print(f"      [{i}/{min(10, len(examples))}] F1:{f1['score']:.2f} Clarity:{clarity['score']:.2f} Precision:{precision['score']:.2f}")
+                total = min(max_examples, len(examples))
+                print(
+                    f"      [{i}/{total}]"
+                    f" F1:{f1['score']:.2f}"
+                    f" Clarity:{clarity['score']:.2f}"
+                    f" Precision:{precision['score']:.2f}"
+                )
 
         avg_f1 = sum(f1_scores) / len(f1_scores) if f1_scores else 0.0
         avg_clarity = sum(clarity_scores) / len(clarity_scores) if clarity_scores else 0.0
