@@ -29,23 +29,74 @@ DICAS DE IMPLEMENTAÇÃO:
 - Use `save_yaml` de utils.py para gravar o resultado no arquivo .yml.
 """
 
-import os
 import sys
 from pathlib import Path
 from dotenv import load_dotenv
 from langsmith import Client
+from langchain_core.prompts import (
+    HumanMessagePromptTemplate,
+    SystemMessagePromptTemplate,
+)
 from utils import save_yaml, check_env_vars, print_section_header
 
 load_dotenv()
 
+PROMPT_NAME = "leonanluppi/bug_to_user_story_v1"
+OUTPUT_PATH = Path(__file__).parent.parent / "prompts" / "bug_to_user_story_v1.yml"
 
-def pull_prompts_from_langsmith():
-    ...
+
+def pull_prompts_from_langsmith(prompt_name: str) -> dict | None:
+    """Faz pull do prompt no Hub e devolve o dicionário no esquema do v1.yml."""
+    print(f"Recuperando prompt {prompt_name}")
+    try:
+        prompt = Client().pull_prompt(prompt_name, dangerously_pull_public_prompt=True)
+    except Exception as e:
+        print(f"Erro ao recuperar prompt: {e}")
+        print("Confira LANGSMITH_API_KEY e LANGSMITH_ENDPOINT no .env")
+        return None
+
+    system_prompt = ""
+    user_prompt = ""
+    for message in prompt.messages:
+        if isinstance(message, SystemMessagePromptTemplate):
+            system_prompt = message.prompt.template
+        elif isinstance(message, HumanMessagePromptTemplate):
+            user_prompt = message.prompt.template
+
+    if not system_prompt or not user_prompt:
+        print("Prompt do Hub não tem mensagens system e user como esperado")
+        return None
+
+    return {
+        "bug_to_user_story_v1": {
+            "description": "Prompt para converter relatos de bugs em User Stories",
+            "system_prompt": system_prompt,
+            "user_prompt": user_prompt,
+            "version": "v1",
+            "created_at": "2025-01-15",
+            "tags": ["bug-analysis", "user-story", "product-management"],
+        }
+    }
 
 
 def main():
     """Função principal"""
-    ...
+    print_section_header("PULL DE PROMPTS DO LANGSMITH HUB")
+
+    if not check_env_vars(["LANGSMITH_API_KEY"]):
+        return 1
+
+    prompt_data = pull_prompts_from_langsmith(PROMPT_NAME)
+    if not prompt_data:
+        print("Falha ao obter prompts do LangSmith Hub")
+        return 1
+
+    if not save_yaml(prompt_data, str(OUTPUT_PATH)):
+        print("Falha ao salvar prompts")
+        return 1
+
+    print(f"Prompts salvos em: {OUTPUT_PATH}")
+    return 0
 
 
 if __name__ == "__main__":

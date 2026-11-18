@@ -1,0 +1,46 @@
+
+🔍 Avaliando: leonanluppi/bug_to_user_story_v1
+   Puxando prompt do LangSmith Hub: leonanluppi/bug_to_user_story_v1
+   ✓ Prompt carregado com sucesso
+   Rodando experimento no LangSmith...
+View the evaluation results for experiment: 'leonanluppi-bug_to_user_story_v1-ed776144' at:
+https://smith.langchain.com/o/c3f6ef11-bfc5-4ecf-9966-74e9516a526a/datasets/558201bb-b3c0-4ee8-b83f-4a882a8a1263/compare?selectedSessions=ed9fb8be-b418-4d7d-8970-4fff44211d39
+
+
+      [1] F1:0.92 Clarity:0.85 Precision:0.93
+      [2] F1:0.89 Clarity:0.70 Precision:0.93
+      [3] F1:0.82 Clarity:0.65 Precision:0.85
+      [4] F1:0.62 Clarity:0.85 Precision:0.83
+      [5] F1:0.79 Clarity:0.85 Precision:0.93
+      [6] F1:0.82 Clarity:0.85 Precision:0.93
+      [7] F1:0.75 Clarity:0.70 Precision:0.83
+      [8] F1:0.92 Clarity:0.85 Precision:1.00
+      [9] F1:0.95 Clarity:0.95 Precision:1.00
+      [10] F1:0.79 Clarity:0.85 Precision:0.93
+      [11] F1:0.69 Clarity:0.85 Precision:0.93
+      [12] F1:0.75 Clarity:0.85 Precision:0.93
+      [13] F1:0.89 Clarity:0.75 Precision:0.90
+      [14] F1:0.57 Clarity:0.70 Precision:0.80
+      [15] F1:0.80 Clarity:0.85 Precision:0.93
+
+==================================================
+Prompt: leonanluppi/bug_to_user_story_v1
+==================================================
+
+Métricas Derivadas:
+  - Helpfulness: 0.86 ✓
+  - Correctness: 0.85 ✓
+
+Métricas Base:
+  - F1-Score: 0.80 ✗
+  - Clarity: 0.81 ✓
+  - Precision: 0.91 ✓
+
+--------------------------------------------------
+📊 MÉDIA GERAL: 0.8451
+--------------------------------------------------
+
+❌ STATUS: REPROVADO
+⚠️  Métricas abaixo de 0.8: f1_score
+⚠️  Média atual: 0.8451 | Necessário: 0.8000
+https://smith.langchain.com/o/c3f6ef11-bfc5-4ecf-9966-74e9516a526a/datasets/558201bb-b3c0-4ee8-b83f-4a882a8a1263/compare?selectedSessions=ed9fb8be-b418-4d7d-8970-4fff44211d39
