@@ -16,6 +16,7 @@ Antes de reescrever, listei o que estava errado na v1 e o que cada defeito pedia
 | Formato de saída indefinido | Formato de saída fixo | User story + critérios Dado/Quando/Então, com estrutura por complexidade |
 | Nenhum exemplo de entrada e saída | Few-shot | Quatro exemplos: dois simples, um médio e um complexo |
 | Sem regras de comportamento | Instruções negativas | Regras de precisão (não inventar) e de cobertura (não omitir) |
+| Nada sobre relatos fora do padrão | Casos especiais | Regras para relato vago, sem persona, com trechos em inglês, falha de segurança e múltiplos problemas |
 
 ### Few-shot Learning
 
@@ -37,6 +38,8 @@ A análise não vai para a resposta, pois a Precision cai quando a saída tem um
 
 Na v1, o relato aparecia duas vezes, no system e no user. Deixei as regras só no system e o relato só no user, para o modelo saber o que é instrução e o que é o texto a analisar. As regras negativas são diretas, como "NÃO invente endpoints, logs ou dados que não estejam no relato", e são equilibradas por regras de cobertura: cada problema tem que virar critério, e números e impacto citados no relato têm que aparecer na resposta. O formato muda com a complexidade do bug. Bug simples recebe só a user story e cinco critérios, enquanto o complexo recebe todas as seções. Assim a resposta não traz seções que a referência não espera.
 
+Além disso, o prompt tem uma lista de casos especiais. Ela diz o que fazer quando o relato é só uma frase, quando não dá para saber quem é o usuário, quando há trechos em inglês como "Steps to reproduce", quando o problema é de segurança e quando vários problemas aparecem juntos. No caso do relato vago, por exemplo, a regra é usar o formato simples e não completar com endpoints ou números que o relato não traz.
+
 ## Resultados Finais
 
 O dataset de avaliação, com os 15 exemplos e todos os experimentos, está público em https://smith.langchain.com/public/a23d5987-7969-44d0-909e-5d3b4e4b6a47/d. As respostas foram geradas com `gpt-4.1-mini` e avaliadas com `gpt-4.1`, os dois com `temperature=0`. A saída completa de cada rodada está em [docs/iteracoes/](docs/iteracoes/).
@@ -45,15 +48,15 @@ O dataset de avaliação, com os 15 exemplos e todos os experimentos, está púb
 
 | Métrica | v1 (original) | v2 (final) |
 |---|---|---|
-| Helpfulness | 0.86 | 0.91 |
-| Correctness | 0.85 | 0.91 |
-| F1-Score | 0.80 | 0.89 |
-| Clarity | 0.81 | 0.89 |
-| Precision | 0.91 | 0.93 |
-| Média | 0.8451 | 0.9080 |
+| Helpfulness | 0.86 | 0.90 |
+| Correctness | 0.85 | 0.92 |
+| F1-Score | 0.80 | 0.90 |
+| Clarity | 0.81 | 0.86 |
+| Precision | 0.91 | 0.94 |
+| Média | 0.8451 | 0.9053 |
 | Status | Reprovado (F1) | Aprovado |
 
-A v1 tirou notas melhores do que eu esperava. O `gpt-4.1-mini` escreve user stories razoáveis mesmo com instrução vaga, e ela reprovou só no F1. Com a v2, o F1 foi de 0.80 para 0.89 e a Clarity, de 0.81 para 0.89. A maior diferença apareceu no bug do campo de e-mail que aceita texto sem @: a v1 tirou 0.57 de F1 e a v2 chegou a 1.00.
+A v1 tirou notas melhores do que eu esperava. O `gpt-4.1-mini` escreve user stories razoáveis mesmo com instrução vaga, e ela reprovou só no F1. Com a v2, o F1 foi de 0.80 para 0.90 e a Clarity, de 0.81 para 0.86. A maior diferença apareceu no bug do campo de e-mail que aceita texto sem @: a v1 tirou 0.57 de F1 e a v2 chegou a 1.00.
 
 ### Registro de iterações
 
@@ -63,14 +66,15 @@ A v1 tirou notas melhores do que eu esperava. O `gpt-4.1-mini` escreve user stor
 | v2 · iteração 1 | role prompting, few-shot com bugs inventados, CoT e formato por complexidade | a análise de cobertura sobe o F1 e o formato fixo sobe a Clarity | 0.90 | 0.90 | 0.89 | 0.87 | 0.92 | 0.8951 |
 | v2 · iteração 2 | passo da jornada esperada do usuário (antes, durante, depois) | o juiz apontava omissões, como o mesmo desempenho em outro navegador, o e-mail depois do pagamento e o comportamento do modal; pensar na jornada inteira deveria subir o recall | 0.91 | 0.92 | 0.89 | 0.86 | 0.95 | 0.9042 |
 | v2 · iteração 3 | no passo da jornada, a meta passa a vir da dor do cliente, e o valor que causa o problema não pode ser usado como meta | no bug do relatório lento, o modelo deixaria de usar o timeout como meta | 0.91 | 0.91 | 0.89 | 0.89 | 0.93 | 0.9080 |
+| v2 · iteração 4 | lista de casos especiais | o enunciado pede tratamento de edge cases | 0.90 | 0.92 | 0.90 | 0.86 | 0.94 | 0.9053 |
 
 #### Iteração 1
 
-Montei a v2 com role prompting, few-shot, chain of thought e formato por complexidade. Ela já passou em todas as métricas na primeira rodada, com média 0.8951.
+A v1 reprovou só no F1 (0.80), que cai quando a resposta deixa de fora algo que a referência espera. Montei a v2 com role prompting, few-shot, chain of thought e formato por complexidade, com um último passo na análise para conferir se todo o relato foi coberto. Ela passou em todas as métricas na primeira rodada: o F1 foi para 0.89 e a média para 0.8951.
 
 #### Iteração 2
 
-Lendo os comentários do juiz, vi que a maior parte dos pontos perdidos vinha de omissões. As respostas consertavam o sintoma, mas esqueciam o resto do fluxo: o mesmo desempenho em outro navegador, o e-mail de confirmação depois do pagamento, o comportamento do modal. Acrescentei à análise um passo para descrever a jornada do usuário antes, durante e depois da correção.
+Lendo os comentários do juiz, vi que a maior parte dos pontos perdidos vinha de omissões. As respostas consertavam o sintoma, mas não contemplava o fluxo completo, então acrescentei na análise um passo para descrever a jornada do usuário antes, durante e depois da correção.
 
 A média subiu para 0.9042, puxada pela Precision, que foi de 0.92 para 0.95. O F1 ficou igual, em 0.89: subiu em cinco exemplos e caiu em outros cinco. A Clarity caiu de 0.87 para 0.86, mas nenhum exemplo ficou abaixo de 0.85 (antes, dois tinham 0.70).
 
@@ -78,7 +82,21 @@ A maior queda foi no relatório de vendas que demora mais de 2 minutos, de 0.75 
 
 #### Iteração 3
 
-Para o caso do relatório, tentei fazer o modelo tirar a meta da reclamação do cliente, em vez de usar o valor que causa o problema. A média subiu para 0.9080 e a Clarity para 0.89, mas o comportamento que eu queria mudar continuou igual: o juiz ainda apontou os 120 segundos como meta. O relatório foi de 0.65 para 0.75, o que parece mais variação entre rodadas do que efeito da regra. O bug do modal atrás do menu lateral caiu de 0.82 para 0.75, pelas mesmas omissões de antes. Fiquei com a terceira iteração porque todas as métricas passaram e a média é a maior das três.
+Para o caso do relatório, tentei fazer o modelo tirar a meta da reclamação do cliente, em vez de usar o valor que causa o problema. A média subiu para 0.9080 e a Clarity para 0.89, mas o comportamento que eu queria mudar continuou igual: o juiz ainda apontou os 120 segundos como meta. Mesmo assim, o relatório subiu de 0.65 para 0.75, e o bug do modal atrás do menu lateral, que eu não tinha mexido, caiu de 0.82 para 0.75.
+
+#### Iteração 4
+
+Revisando o enunciado, vi que o prompt não tratava edge cases de forma explícita, então acrescentei a lista de casos especiais e rodei de novo. Todas as métricas passaram, com média 0.9053, um pouco abaixo da iteração 3. O F1 subiu para 0.90 e a Clarity caiu para 0.86.
+
+O bug do modal subiu de 0.75 para 0.82 no F1. Em compensação, o carrinho que deixa finalizar a compra com produto fora de estoque caiu de 0.90 para 0.72, porque o juiz sentiu falta de itens que estavam na referência e não no relato, como a reserva temporária de estoque. Talvez a nova regra de só incluir melhoria escrita no relato tenha cortado esses itens.
+
+Fiquei com esta versão como v2 final. A média é quase a mesma da iteração 3, e ela é a única que trata edge cases.
+
+#### O que aprendi
+
+- Quase todo ponto perdido no F1 veio de omissão. As respostas raramente traziam informação errada, mas faltava alguma parte do fluxo. O salto do F1, de 0.80 para 0.89, veio na iteração 1, com a análise passo a passo e a conferência de cobertura. Depois disso, as mudanças mexeram pouco no F1 médio.
+- Parte das referências traz dados que não estão no relato, como os 30 segundos do relatório de vendas e a reserva de estoque do carrinho. Nesses casos, o prompt só chegaria à nota máxima inventando, e preferi aceitar a perda.
+- A nota de um mesmo exemplo muda de uma rodada para outra. Rodei tudo com `temperature=0`, que faz o modelo escolher sempre a palavra mais provável, e por isso eu esperava respostas e notas iguais a cada execução. Não foi o que aconteceu: tanto a resposta quanto a avaliação do juiz variam um pouco. O relatório subiu de 0.65 para 0.75 sem que a resposta mudasse no ponto que eu queria corrigir. Entendo que uma rodada só não mostra se uma regra funcionou, e os comentários do são importantes para entender a nota.
 
 ### Evidências
 

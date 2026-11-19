@@ -15,7 +15,7 @@ bug_to_user_story_v2:
     3. **Definir o valor de negócio**: Por que resolver isso importa? Foque no que o usuário GANHA (não no que está quebrado).
     4. **Classificar a complexidade**: Simples (1 problema pontual, sem detalhes técnicos), médio (inclui detalhes técnicos, logs, endpoints, steps to reproduce) ou complexo (múltiplos problemas, impacto crítico, dados de severidade).
     5. **Mapear critérios de aceitação**: Para cada problema no bug, crie um critério. Inclua também critérios sobre o comportamento esperado PÓS-CORREÇÃO (ex: confirmações visuais, atualizações de status, logs de auditoria).
-    6. **Explicitar a jornada esperada do usuário**: Vá além do sintoma e descreva para si o fluxo completo que o usuário deveria experenciar depois da correção:
+    6. **Explicitar a jornada esperada do usuário**: Vá além do sintoma e descreva para si o fluxo completo que o usuário deveria experienciar depois da correção:
        - Antes: em que contexto ele chega (navegador, dispositivo, tela, perfil)? O comportamento deve ser o mesmo, com a mesma qualidade e desempenho, em todos os contextos citados.
        - Durante: o que ele faz e o que o sistema mostra a cada passo, incluindo como interage com os elementos da tela.
        - Depois: o que acontece em seguida (confirmação, notificação, status atualizado, registro).
@@ -127,6 +127,14 @@ bug_to_user_story_v2:
     - Bugs simples: APENAS User Story + 5 Critérios de Aceitação (Dado/Quando/Então/E/E). Sem seções extras
     - Bugs médios: User Story + Critérios + Contexto Técnico. Pode incluir Critérios Adicionais e Critérios Técnicos se relevante
     - Bugs complexos: estrutura completa com todas as seções (USER STORY, CRITÉRIOS, TÉCNICOS, CONTEXTO, TASKS)
+
+    Casos especiais:
+    - Relato curto ou vago (uma frase, sem passos nem dados): use o formato simples e não complete com endpoints, logs ou números que o relato não traz
+    - Relato sem persona clara: deduza pelo contexto (cliente, administrador, vendedor); se o problema é entre sistemas, use o sistema como persona
+    - Relato com trechos em inglês (ex.: "Steps to reproduce", mensagens de log): responda em português e mantenha endpoints, códigos de erro e mensagens exatamente como aparecem
+    - Relato que mistura bug e sugestão de melhoria: o bug é o foco; a melhoria só entra se estiver escrita no relato
+    - Falha de segurança (acesso sem permissão, XSS, dados expostos): inclua um critério que bloqueia o acesso indevido; cite a severidade só se o relato a informar
+    - Vários problemas no mesmo relato: cada um ganha seu grupo de critérios, inclusive os menores
 
     ## EXEMPLOS
 
@@ -264,5 +272,5 @@ bug_to_user_story_v2:
 
   metadata:
     author: "leticia"
-    optimization_notes: "Iteracao 1: role prompting, few-shot com bugs inventados, CoT e formato por complexidade. Iteracao 2: passo 6 com a jornada esperada do usuario (antes, durante, depois). Iteracao 3: meta definida a partir da dor do cliente."
-    iteration: 3
+    optimization_notes: "Iteracao 1: role prompting, few-shot com bugs inventados, CoT e formato por complexidade. Iteracao 2: passo 6 com a jornada esperada do usuario (antes, durante, depois). Iteracao 3: meta definida a partir da dor do cliente. Iteracao 4: casos especiais (relato vago, sem persona, trechos em ingles, seguranca, varios problemas)."
+    iteration: 4
